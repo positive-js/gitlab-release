@@ -1,0 +1,37 @@
+{
+    "name": "@ptsecurity/gitlab-release",
+    "version": "0.0.1",
+    "author": "Positive Technologies",
+    "description": "",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/positive-js/gitlab-release.git"
+    },
+    "engines": {
+        "node": ">=8.0.0"
+    },
+    "license": "MIT",
+    "keywords": [
+        "ptsecurity",
+        "automation",
+        "gitlab",
+        "npm",
+        "publish",
+        "release"
+    ],
+    "bin": "cli.js",
+    "main": "index.js",
+    "scripts": {
+        "test:unit": "nyc mocha --opts mocha.opts test/**/*.spec.js"
+    },
+    "dependencies": {
+        "chalk": "^2.4.1",
+        "figures": "^2.0.0",
+        "listr": "^0.14.1",
+        "log-symbols": "^2.2.0",
+        "meow": "^5.0.0",
+        "read-pkg-up": "^4.0.0",
+        "signale": "^1.2.1"
+    },
+    "devDependencies": {}
+}

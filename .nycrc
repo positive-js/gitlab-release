@@ -1,0 +1,15 @@
+{
+  "all": true,
+  "cache": true,
+  "include": [
+    "lib/**/*.js"
+  ],
+  "exclude": [
+    "cli.js",
+    "test/**/*.spec.js",
+  ],
+  "reporter": [
+    "lcov",
+    "text"
+  ]
+}
