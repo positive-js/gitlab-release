@@ -1,4 +1,10 @@
+const _ = require('lodash');
+
 const Listr = require('listr');
+const Bluebird = require('bluebird');
+const latestSemverTag = Bluebird.promisify(require('git-latest-semver-tag'));
+const streamToArray = require('stream-to-array');
+const rawCommitsStream = require('git-raw-commits');
 
 const util = require('./lib/util');
 
@@ -30,20 +36,20 @@ function gitlabRelease(packageOpts, { logger }) {
 
     const buildTypes = {
         'release': function () {
-            console.log(`We r start publish 'release' branch!`);
+            logger.log(`We r start publish 'release' branch!`);
 
             return {
                 isRelease: true
             }
         },
         'fourDigits': function () {
-            console.log(`We r start publish Release with 'fourDigits'!`);
+            logger.log(`We r start publish Release with 'fourDigits'!`);
             return {
                 isFourDigits: true
             }
         },
         'feature': function () {
-            console.log(`We r start publish 'feature' branch!`);
+            logger.log(`We r start publish 'feature' branch!`);
 
             return {
                 ifFeature: true
@@ -55,4 +61,26 @@ function gitlabRelease(packageOpts, { logger }) {
 
     const tasks = new Listr([]);
 
+    tasks.add([
+        {
+            title: 'Latest Semver Tag',
+            task: (ctx) => {
+
+                return latestSemverTag()
+                    .then(latestTag => {
+                        return streamToArray(rawCommitsStream({from: latestTag}));
+                    })
+                    .then(_.partial(_.map, _, value => value.toString()))
+            }
+        },
+        {
+            title: 'Commit Messages',
+            task: (ctx) => {
+
+                return logger.log(`commit messages from last tag: %O`);
+            }
+        },
+    ]);
+
+    return tasks.run();
 }

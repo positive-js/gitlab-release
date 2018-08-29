@@ -28,10 +28,10 @@ const context = {
     stderr: process.stderr
 };
 
-context.logger = getLogger(context);
+const logger = getLogger(context);
 
 process.on('SIGINT', () => {
-    context.logger.log('\nAborted!');
+    logger.log('\nAborted!');
     process.exit(1);
 });
 
@@ -41,8 +41,8 @@ Promise
 
         return ui(cli.flags);
     })
-    .then(options => gitlabRelease(options, context.logger))
+    .then(options => gitlabRelease(options, { logger } ))
     .catch(err => {
-        context.logger.error(`\n${logSymbols.error} ${err.message}`);
+        logger.error(`\n${logSymbols.error} ${err.message}`);
         process.exit(1);
     });

@@ -25,13 +25,18 @@
         "test:unit": "nyc mocha --opts mocha.opts test/**/*.spec.js"
     },
     "dependencies": {
+        "bluebird": "^3.5.1",
         "chalk": "^2.4.1",
         "figures": "^2.0.0",
+        "git-latest-semver-tag": "^1.0.2",
+        "git-raw-commits": "^2.0.0",
         "listr": "^0.14.1",
+        "lodash": "^4.17.10",
         "log-symbols": "^2.2.0",
         "meow": "^5.0.0",
         "read-pkg-up": "^4.0.0",
-        "signale": "^1.2.1"
+        "signale": "^1.2.1",
+        "stream-to-array": "^2.3.0"
     },
     "devDependencies": {}
 }
