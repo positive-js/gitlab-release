@@ -64,13 +64,16 @@ function gitlabRelease(packageOpts, { logger }) {
     tasks.add([
         {
             title: 'Latest Semver Tag',
-            task: (ctx) => {
-
+            task: (ctx, task) => {
+                task.output = ''
                 return latestSemverTag()
                     .then(latestTag => {
                         return streamToArray(rawCommitsStream({from: latestTag}));
                     })
                     .then(_.partial(_.map, _, value => value.toString()))
+                    .then((commits) => {
+                        logger.log(`commit messages from last tag: %O`, commits);
+                    });
             }
         },
         {
