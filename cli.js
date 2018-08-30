@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const meow = require('meow');
 const logSymbols = require('log-symbols');
 const updateNotifier = require('update-notifier');
@@ -9,14 +11,14 @@ const gitlabRelease = require('.');
 
 const cli = meow(`
     Usage
-        $
+        $ gitlab-release <input>
 
     Options
-      --built-type, -bt    Build Type
-      --git-host,   -gh    'gitlab.domain.com/{group-name}/{project-name}.git';
+        --built-type, -bt    Build Type
+        --git-host,   -gh    'gitlab.domain.com/{group-name}/{project-name}.git';
 
     Examples
-      $ echo
+        $ gitlab-release --git-host 'gitlab.domain.com/project.git'
 `, {
     flags: {
         gitHost: {

@@ -1,7 +1,5 @@
-const path = require('path');
-const fs = require('fs');
+#!/usr/bin/env node
 const _ = require('lodash');
-const semver = require('semver');
 const execa = require('execa');
 
 const Listr = require('listr');
@@ -15,6 +13,8 @@ const rawCommitsStream = require('git-raw-commits');
 
 const releaseNotesGenerator = require('./lib/releaseNotesGenerator');
 const util = require('./lib/util');
+const gitTask = require('./lib/tasks/git-task');
+const pkgTask = require('./lib/tasks/pkg-task');
 
 
 module.exports = gitlabRelease;
@@ -34,7 +34,12 @@ function gitlabRelease(packageOpts, { logger }) {
         currentVersion: pkg.version
     };
 
-    const branchName = process.env.CI_COMMIT_REF_NAME || 'release/';
+    const branchName = process.env.CI_COMMIT_REF_NAME;
+
+    if (!branchName) {
+        logger.error(`branchName is not define`);
+        return 1;
+    }
 
     const branchType = branchName.split('/');
 
@@ -82,7 +87,7 @@ function gitlabRelease(packageOpts, { logger }) {
 
                         task.output = commits;
                         ctx.commits = commits;
-                        resolve();
+                        //resolve();
                     })
                     .catch(err => {
                         reject(err);
@@ -110,82 +115,12 @@ function gitlabRelease(packageOpts, { logger }) {
                     })
             })
         },
-        {
-            title: 'Increment package.json version',
-            task: (ctx, task) => new Promise((resolve, reject) => {
-
-                let nextVersion;
-
-                if (config.buildType().isRelease) {
-
-                    nextVersion = semver.inc(config.pkg.version, 'patch');
-                } else if (config.buildType().ifFeature) {
-
-                    const featureName = branchType[1].split(/_(.+)/)[1];
-
-                    nextVersion = semver.inc(config.pkg.version, 'prerelease', featureName);
-                } else if (config.buildType().isFourDigits) {
-
-                    nextVersion = semver.inc(config.pkg.version, 'prerelease', 'build');
-                } else {
-                    task.output = 'incPkgVersion: unsupported buildType';
-                    reject();
-                }
-
-                config.pkg.version = config.nextVersion = nextVersion;
-
-                new Promise((resolve, reject) => {
-                    const out = fs.createWriteStream(path.join(process.cwd(), `package.json`))
-                        .on('finish', resolve)
-                        .on('error', reject);
-
-                    out.write(JSON.stringify(config.pkg, null, '    '));
-                    out.end();
-                })
-                    .then(() => {
-                        task.output = `Next version: ${config.pkg.version}`;
-
-                        resolve();
-                    })
-                    .catch(() => {
-                        reject();
-                    })
-            })
-        },
-        {
-            title: 'Increment package-lock.json version',
-            task: (ctx, task) => new Promise((resolve, reject) => {
-
-                const pkgLock = JSON.parse(fs.readFileSync(path.join(process.cwd(), `package-lock.json`)));
-                pkgLock.version = config.pkg.version;
-
-                const out = fs.createWriteStream(path.join(process.cwd(), `package-lock.json`))
-                    .on('finish', resolve)
-                    .on('error', reject);
-
-                out.write(JSON.stringify(pkgLock, null, '    '));
-                out.end();
-            })
-        }
+        pkgTask.incPkgJson,
+        pkgTask.incPkgLockJson
     ]);
 
     tasks.add([
-        {
-            title: 'Git config',
-            task: (ctx, task) => new Promise((resolve, reject) => {
-
-                execa.shellSync(`git config --global user.email "${process.env.BUILDER_USER}@ptsecurity.com"`);
-                task.output = 'added User Email';
-
-                execa.shellSync(`git config --global user.name "${process.env.BUILDER_USER}"`);
-                task.output = 'added User Name';
-
-                execa.shellSync(`git config --global push.default simple`);
-                task.output = 'added "push.default simple"';
-
-                resolve();
-            })
-        }
+        gitTask.gitConfig
     ]);
 
     if (config.buildType().isRelease) {
@@ -231,18 +166,7 @@ function gitlabRelease(packageOpts, { logger }) {
     }
 
     tasks.add([
-        {
-            title: 'Git "commit" and "push"',
-            task: (ctx, task) => new Promise((resolve, reject) => {
-
-                execa.shellSync(`git commit -m '[ci skip] bump version to: ${config.pkg.version}'`);
-                execa.shellSync(`git push https://${process.env.BUILDER_USER}:${process.env.BUILDER_USER_PASSWORD}@${config.gitHost} HEAD:${process.env.CI_COMMIT_REF_NAME}`);
-                execa.shellSync(`git tag ${config.pkg.version}`);
-                task.output = `added tag ${config.pkg.version}`;
-
-                resolve();
-            })
-        }
+        gitTask.gitCommitAndPush
     ]);
 
     if (config.buildType().isFeature) {
@@ -276,5 +200,7 @@ function gitlabRelease(packageOpts, { logger }) {
         ])
     }
 
-    return tasks.run();
+    return tasks.run({
+        config
+    });
 }
