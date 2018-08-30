@@ -67,6 +67,7 @@ function gitlabRelease(packageOpts, { logger }) {
     };
 
     config.buildType = (packageOpts.buildType) ? buildTypes[packageOpts.buildType] : buildTypes[branchType[0]];
+    config.branchType = branchType;
 
     const tasks = new Listr([], { renderer: VerboseRenderer });
 
@@ -87,7 +88,7 @@ function gitlabRelease(packageOpts, { logger }) {
 
                         task.output = commits;
                         ctx.commits = commits;
-                        //resolve();
+                        resolve();
                     })
                     .catch(err => {
                         reject(err);
@@ -165,8 +166,14 @@ function gitlabRelease(packageOpts, { logger }) {
         ]);
     }
 
+    if (packageOpts.allowPush) {
+        tasks.add([
+            gitTask.gitCommitAndPush
+        ]);
+    }
+
     tasks.add([
-        gitTask.gitCommitAndPush
+        gitTask.gitAddTag
     ]);
 
     if (config.buildType().isFeature) {
@@ -188,19 +195,16 @@ function gitlabRelease(packageOpts, { logger }) {
             {
                 title: 'Upload changelog to Gitlab Tag',
                 task: (ctx, task) => new Promise((resolve, reject) => {
-                    gitlabReleaser(config)
-                        .then(() => {
-                            resolve();
-                        })
-                        .catch(() => {
-                            reject();
-                        });
+                    //gitlabReleaser(config);
+                    resolve();
                 })
             }
         ])
     }
 
-    return tasks.run({
-        config
-    });
+    return tasks.run({ config })
+        .then(() => util.readPkg())
+        .then(result => {
+            return result.version;
+        });
 }

@@ -16,11 +16,16 @@ const cli = meow(`
     Options
         --built-type, -bt    Build Type
         --git-host,   -gh    'gitlab.domain.com/{group-name}/{project-name}.git';
+        --allow-push
 
     Examples
         $ gitlab-release --git-host 'gitlab.domain.com/project.git'
 `, {
     flags: {
+        allowPush: {
+            type: 'boolean',
+            default: true
+        },
         gitHost: {
             type: 'string',
             alias: 'gh'
