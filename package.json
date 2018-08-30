@@ -45,10 +45,12 @@
         "log-symbols": "^2.2.0",
         "meow": "^5.0.0",
         "read-pkg-up": "^4.0.0",
+        "semantic-release-gitlab-releaser": "^4.0.16",
         "semver": "^5.5.1",
         "showdown": "^1.8.6",
         "signale": "^1.2.1",
-        "stream-to-array": "^2.3.0"
+        "stream-to-array": "^2.3.0",
+        "update-notifier": "^2.5.0"
     },
     "devDependencies": {},
     "bugs": {

@@ -5,6 +5,7 @@ const semver = require('semver');
 const execa = require('execa');
 
 const Listr = require('listr');
+const gitlabReleaser = require('semantic-release-gitlab-releaser');
 const VerboseRenderer = require('listr-verbose-renderer');
 const Bluebird = require('bluebird');
 const latestSemverTag = Bluebird.promisify(require('git-latest-semver-tag'));
@@ -29,6 +30,7 @@ function gitlabRelease(packageOpts, { logger }) {
             insecureApi: process.env.GITLAB_INSECURE_API === `true`,
             preset: 'angular'
         },
+        gitHost: packageOpts.gitHost,
         currentVersion: pkg.version
     };
 
@@ -194,6 +196,9 @@ function gitlabRelease(packageOpts, { logger }) {
                     releaseNotesGenerator(config)
                         .then(() => {
                             resolve();
+                        })
+                        .catch(() => {
+                            reject();
                         });
                 })
             },
@@ -223,6 +228,52 @@ function gitlabRelease(packageOpts, { logger }) {
                 })
             }
         ]);
+    }
+
+    tasks.add([
+        {
+            title: 'Git "commit" and "push"',
+            task: (ctx, task) => new Promise((resolve, reject) => {
+
+                execa.shellSync(`git commit -m '[ci skip] bump version to: ${config.pkg.version}'`);
+                execa.shellSync(`git push https://${process.env.BUILDER_USER}:${process.env.BUILDER_USER_PASSWORD}@${config.gitHost} HEAD:${process.env.CI_COMMIT_REF_NAME}`);
+                execa.shellSync(`git tag ${config.pkg.version}`);
+                task.output = `added tag ${config.pkg.version}`;
+
+                resolve();
+            })
+        }
+    ]);
+
+    if (config.buildType().isFeature) {
+        tasks.add([
+            {
+                title: 'Git "push --tags" for Feature',
+                task: () => new Promise((resolve, reject) => {
+
+                    execa.shellSync(`git push https://${process.env.BUILDER_USER}:${process.env.BUILDER_USER_PASSWORD}@${config.gitHost} --tags`);
+
+                    resolve();
+                })
+            }
+        ]);
+    }
+
+    if (config.buildType().isRelease) {
+        tasks.add([
+            {
+                title: 'Upload changelog to Gitlab Tag',
+                task: (ctx, task) => new Promise((resolve, reject) => {
+                    gitlabReleaser(config)
+                        .then(() => {
+                            resolve();
+                        })
+                        .catch(() => {
+                            reject();
+                        });
+                })
+            }
+        ])
     }
 
     return tasks.run();

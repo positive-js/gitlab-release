@@ -1,5 +1,6 @@
 const meow = require('meow');
 const logSymbols = require('log-symbols');
+const updateNotifier = require('update-notifier');
 
 const getLogger = require('./lib/get-logger');
 const ui = require('./lib/ui');
@@ -8,18 +9,28 @@ const gitlabRelease = require('.');
 
 const cli = meow(`
     Usage
+        $
 
     Options
-      --built-type  Build Type
+      --built-type, -bt    Build Type
+      --git-host,   -gh    'gitlab.domain.com/{group-name}/{project-name}.git';
+
     Examples
       $ echo
 `, {
     flags: {
+        gitHost: {
+            type: 'string',
+            alias: 'gh'
+        },
         buildType: {
-            type: 'string'
+            type: 'string',
+            alias: 'bt'
         }
     }
 });
+
+updateNotifier({pkg: cli.pkg}).notify();
 
 const context = {
     cwd: process.cwd(),
@@ -40,6 +51,14 @@ Promise
     .then(() => {
 
         return ui(cli.flags);
+    })
+    .then(options => {
+        if (!options.gitHost) {
+            logger.error(`Must set "--git-host" option`);
+            process.exit(0);
+        }
+
+        return options;
     })
     .then(options => gitlabRelease(options, { logger } ))
     .catch(err => {
