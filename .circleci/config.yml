@@ -31,6 +31,7 @@ jobs:
             - run:
                   name: Unit Test
                   command: npm run test:unit
+            - run: ($(npm bin)/codecov || echo "Codecov did not collect coverage reports")
             - persist_to_workspace:
                   root: ./
                   paths:
