@@ -6,7 +6,7 @@
   ],
   "exclude": [
     "cli.js",
-    "test/**/*.spec.js",
+    "test/**/*.spec.js"
   ],
   "reporter": [
     "lcov",
