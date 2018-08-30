@@ -195,8 +195,13 @@ function gitlabRelease(packageOpts, { logger }) {
             {
                 title: 'Upload changelog to Gitlab Tag',
                 task: (ctx, task) => new Promise((resolve, reject) => {
-                    //gitlabReleaser(config);
-                    resolve();
+                    gitlabReleaser(config)
+                        .then(() => {
+                            resolve();
+                        })
+                        .catch((err) => {
+                            reject(err);
+                        });
                 })
             }
         ])

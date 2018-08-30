@@ -73,8 +73,6 @@ describe('gitlab-release', function () {
             "requires": true
         }`);
 
-        //fs.writeFileSync(`CHANGELOG.md`, ``);
-
         execa.shellSync('git init');
         execa.shellSync('git config user.email "you@example.com"');
         execa.shellSync('git config user.name "Your Name"');
@@ -96,7 +94,7 @@ describe('gitlab-release', function () {
             process.env.CI_COMMIT_REF_NAME = '';
         });
 
-        it('should increment last tag with a minor for a breaking change (major-worthy)', () => {
+        it('should increment last tag with a PATCH for a any changes', () => {
             const scope = nock(`https://gitlab.project.com`)
                 .get(`/api/v4/version`).reply(200)
                 .post(`/api/v4/projects/project%2Fgitlab-release/repository/tags`, {
@@ -108,6 +106,7 @@ describe('gitlab-release', function () {
 
             execa.shellSync('git tag 1.0.0');
             execa.shellSync('git commit --allow-empty -m "feat(index): major change" --no-gpg-sign');
+            execa.shellSync('git commit --allow-empty -m "fix(index): patch change" --no-gpg-sign');
 
             return expect(gitlabRelease({ gitHost, allowPush }, { logger })).to.be.fulfilled
                 .and.to.eventually.equal('1.0.1')
