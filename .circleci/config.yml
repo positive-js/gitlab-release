@@ -33,14 +33,21 @@ jobs:
                   name: Unit Test
                   command: npm run test:unit
             - persist_to_workspace:
-                  root: .
-                  paths: .
+                  root: ./
+                  paths:
+                      - lib/
+                      - CHANGELOG.md
+                      - cli.js
+                      - index.js
+                      - LICENSE
+                      - package.json
+                      - README.md
 
     publish:
         <<: *job_defaults
         steps:
             - attach_workspace:
-                  at: .
+                  at: ./
             - run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
             - run: npm publish --access public
 

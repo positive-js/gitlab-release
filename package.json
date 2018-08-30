@@ -23,6 +23,11 @@
     "bin": {
         "gitlab-release": "cli.js"
     },
+    "files": [
+        "index.js",
+        "cli.js",
+        "lib"
+    ],
     "main": "index.js",
     "scripts": {
         "test:unit": "nyc mocha --opts mocha.opts test/**/*.spec.js"
