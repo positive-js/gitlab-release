@@ -56,23 +56,6 @@ describe('gitlab-release', function () {
         this.oldToken = process.env.GITLAB_AUTH_TOKEN;
         process.env.GITLAB_AUTH_TOKEN = 'token';
 
-        // Empty `package.json` file for our publish pipeline to write a version into.
-        fs.writeFileSync(`package.json`, `{
-            "name": "test",
-            "version": "1.0.0",
-            "repository": {
-                "type": "git",
-                "url": "https://${gitHost}"
-            }
-        }`);
-
-        fs.writeFileSync(`package-lock.json`, `{
-            "name": "test",
-            "version": "1.0.0",
-            "lockfileVersion": 1,
-            "requires": true
-        }`);
-
         execa.shellSync('git init');
         execa.shellSync('git config user.email "you@example.com"');
         execa.shellSync('git config user.name "Your Name"');
@@ -84,17 +67,34 @@ describe('gitlab-release', function () {
         process.chdir(this.cwd);
     });
 
-    describe('release flow - branch', () => {
+    describe('release flow: Patch increment', () => {
 
         beforeEach(function () {
-            process.env.CI_COMMIT_REF_NAME = 'release/1.0.0'
+            process.env.CI_COMMIT_REF_NAME = 'release/1.0.0';
+
+            // Empty `package.json` file for our publish pipeline to write a version into.
+            fs.writeFileSync(`package.json`, `{
+                "name": "test",
+                "version": "1.0.0",
+                "repository": {
+                    "type": "git",
+                    "url": "https://${gitHost}"
+                }
+            }`);
+
+            fs.writeFileSync(`package-lock.json`, `{
+                "name": "test",
+                "version": "1.0.0",
+                "lockfileVersion": 1,
+                "requires": true
+            }`);
         });
 
         afterEach(function () {
             process.env.CI_COMMIT_REF_NAME = '';
         });
 
-        it('should increment last tag with a PATCH for a any changes', () => {
+        it('should increment PATCH for any changes', () => {
             const scope = nock(`https://gitlab.project.com`)
                 .get(`/api/v4/version`).reply(200)
                 .post(`/api/v4/projects/project%2Fgitlab-release/repository/tags`, {
@@ -107,11 +107,80 @@ describe('gitlab-release', function () {
             execa.shellSync('git tag 1.0.0');
             execa.shellSync('git commit --allow-empty -m "feat(index): major change" --no-gpg-sign');
             execa.shellSync('git commit --allow-empty -m "fix(index): patch change" --no-gpg-sign');
+            execa.shellSync('git commit --allow-empty -m "chore: patch change" --no-gpg-sign');
 
             return expect(gitlabRelease({ gitHost, allowPush }, { logger })).to.be.fulfilled
                 .and.to.eventually.equal('1.0.1')
                 .then(() => scope.isDone());
         });
 
+        it('should increment PATCH for CHORE changes', () => {
+            const scope = nock(`https://gitlab.project.com`)
+                .get(`/api/v4/version`).reply(200)
+                .post(`/api/v4/projects/project%2Fgitlab-release/repository/tags`, {
+                    message: `Release 1.0.1`,
+                    release_description: /.*/,
+                    ref: /.*/,
+                    tag_name: `1.0.1`,
+                }).reply(201);
+
+            execa.shellSync('git tag 1.0.0');
+            execa.shellSync('git commit --allow-empty -m "chore(index): major change" --no-gpg-sign');
+            execa.shellSync('git commit --allow-empty -m "chore(index): patch change" --no-gpg-sign');
+            execa.shellSync('git commit --allow-empty -m "chore: patch change" --no-gpg-sign');
+
+            return expect(gitlabRelease({ gitHost, allowPush }, { logger })).to.be.fulfilled
+                .and.to.eventually.equal('1.0.1')
+                .then(() => scope.isDone());
+        });
+    });
+
+    describe('release flow: FourDigits', () => {
+
+        beforeEach(function () {
+            process.env.CI_COMMIT_REF_NAME = 'release/1.3.1';
+
+            fs.writeFileSync(`package.json`, `{
+                "name": "test",
+                "version": "1.3.1-build.0",
+                "repository": {
+                    "type": "git",
+                    "url": "https://${gitHost}"
+                }
+            }`);
+
+            fs.writeFileSync(`package-lock.json`, `{
+                "name": "test",
+                "version": "1.3.1-build.0",
+                "lockfileVersion": 1,
+                "requires": true
+            }`);
+        });
+
+        afterEach(function () {
+            process.env.CI_COMMIT_REF_NAME = '';
+        });
+
+        it('should increment PATCH for CHORE changes', () => {
+            const scope = nock(`https://gitlab.project.com`)
+                .get(`/api/v4/version`).reply(200)
+                .post(`/api/v4/projects/project%2Fgitlab-release/repository/tags`, {
+                    message: `Release 1.3.1-build.1`,
+                    release_description: /.*/,
+                    ref: /.*/,
+                    tag_name: `1.3.1-build.1`,
+                }).reply(201);
+
+            execa.shellSync('git tag 1.3.0-build.10');
+            execa.shellSync('git commit --allow-empty -m "chore(index): major change" --no-gpg-sign');
+            execa.shellSync('git commit --allow-empty -m "chore(index): patch change" --no-gpg-sign');
+            execa.shellSync('git commit --allow-empty -m "chore: patch change" --no-gpg-sign');
+
+            return expect(gitlabRelease({ buildType: 'fourDigits', gitHost, allowPush }, { logger })).to.be.fulfilled
+                .and.to.eventually.equal('1.3.1-build.1')
+                .then(() => scope.isDone());
+        });
+
     });
 });
+
