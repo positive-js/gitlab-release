@@ -61,7 +61,7 @@ function gitlabRelease(packageOpts, { logger }) {
         },
         'feature': function () {
             return {
-                ifFeature: true
+                isFeature: true
             }
         }
     };
@@ -176,7 +176,7 @@ function gitlabRelease(packageOpts, { logger }) {
         gitTask.gitAddTag
     ]);
 
-    if (config.buildType().isFeature) {
+    if (config.buildType().isFeature && packageOpts.allowPush) {
         tasks.add([
             {
                 title: 'Git "push --tags" for Feature',

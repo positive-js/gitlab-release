@@ -109,7 +109,8 @@ describe('gitlab-release', function () {
             execa.shellSync('git commit --allow-empty -m "fix(index): patch change" --no-gpg-sign');
             execa.shellSync('git commit --allow-empty -m "chore: patch change" --no-gpg-sign');
 
-            return expect(gitlabRelease({ gitHost, allowPush }, { logger })).to.be.fulfilled
+            return expect(gitlabRelease({ gitHost, allowPush }, { logger }))
+                .to.be.fulfilled
                 .and.to.eventually.equal('1.0.1')
                 .then(() => scope.isDone());
         });
@@ -129,7 +130,8 @@ describe('gitlab-release', function () {
             execa.shellSync('git commit --allow-empty -m "chore(index): patch change" --no-gpg-sign');
             execa.shellSync('git commit --allow-empty -m "chore: patch change" --no-gpg-sign');
 
-            return expect(gitlabRelease({ gitHost, allowPush }, { logger })).to.be.fulfilled
+            return expect(gitlabRelease({ gitHost, allowPush }, { logger }))
+                .to.be.fulfilled
                 .and.to.eventually.equal('1.0.1')
                 .then(() => scope.isDone());
         });
@@ -176,11 +178,65 @@ describe('gitlab-release', function () {
             execa.shellSync('git commit --allow-empty -m "chore(index): patch change" --no-gpg-sign');
             execa.shellSync('git commit --allow-empty -m "chore: patch change" --no-gpg-sign');
 
-            return expect(gitlabRelease({ buildType: 'fourDigits', gitHost, allowPush }, { logger })).to.be.fulfilled
+            return expect(gitlabRelease({ buildType: 'fourDigits', gitHost, allowPush }, { logger }))
+                .to.be.fulfilled
                 .and.to.eventually.equal('1.3.1-build.1')
                 .then(() => scope.isDone());
         });
 
+    });
+
+    describe('Feature flow', () => {
+
+        beforeEach(function () {
+            fs.writeFileSync(`package.json`, `{
+                "name": "test",
+                "version": "1.3.1",
+                "repository": {
+                    "type": "git",
+                    "url": "https://${gitHost}"
+                }
+            }`);
+
+            fs.writeFileSync(`package-lock.json`, `{
+                "name": "test",
+                "version": "1.3.1",
+                "lockfileVersion": 1,
+                "requires": true
+            }`);
+        });
+
+        afterEach(function () {
+            process.env.CI_COMMIT_REF_NAME = '';
+        });
+
+        it('should increment PATCH for Feature changes', () => {
+            process.env.CI_COMMIT_REF_NAME = 'feature/23456_big-feature';
+
+            execa.shellSync('git tag 1.3.1');
+            execa.shellSync('git commit --allow-empty -m "chore(index): major change" --no-gpg-sign');
+            execa.shellSync('git commit --allow-empty -m "chore(index): patch change" --no-gpg-sign');
+            execa.shellSync('git commit --allow-empty -m "chore: patch change" --no-gpg-sign');
+
+            return expect(gitlabRelease({ gitHost, allowPush }, { logger }))
+                .to.be.fulfilled
+                .and.to.eventually.equal('1.3.1-big-feature.0')
+        });
+
+        it('check feature naming with incorrect underscore', () => {
+            process.env.CI_COMMIT_REF_NAME = 'feature/23456_big_feature';
+
+            execa.shellSync('git tag 1.3.1');
+            execa.shellSync('git commit --allow-empty -m "chore(index): major change 23456_big_feature" --no-gpg-sign');
+            execa.shellSync('git commit --allow-empty -m "chore(index): patch change" --no-gpg-sign');
+            execa.shellSync('git commit --allow-empty -m "chore: patch change 23456_big_feature" --no-gpg-sign');
+
+            return expect(gitlabRelease({ gitHost, allowPush }, { logger }))
+                .to.be.fulfilled
+                .and.eventually.be.rejected.then((error) => {
+                    expect(`Error: Invalid version: "1.3.1-big_feature.0"`).to.equal(error.actual);
+                });
+        });
     });
 });
 
