@@ -72,22 +72,7 @@ describe('gitlab-release', function () {
         beforeEach(function () {
             process.env.CI_COMMIT_REF_NAME = 'release/1.0.0';
 
-            // Empty `package.json` file for our publish pipeline to write a version into.
-            fs.writeFileSync(`package.json`, `{
-                "name": "test",
-                "version": "1.0.0",
-                "repository": {
-                    "type": "git",
-                    "url": "https://${gitHost}"
-                }
-            }`);
-
-            fs.writeFileSync(`package-lock.json`, `{
-                "name": "test",
-                "version": "1.0.0",
-                "lockfileVersion": 1,
-                "requires": true
-            }`);
+            writePackageJsonFile('1.0.0');
         });
 
         afterEach(function () {
@@ -142,28 +127,14 @@ describe('gitlab-release', function () {
         beforeEach(function () {
             process.env.CI_COMMIT_REF_NAME = 'release/1.3.1';
 
-            fs.writeFileSync(`package.json`, `{
-                "name": "test",
-                "version": "1.3.1-build.0",
-                "repository": {
-                    "type": "git",
-                    "url": "https://${gitHost}"
-                }
-            }`);
-
-            fs.writeFileSync(`package-lock.json`, `{
-                "name": "test",
-                "version": "1.3.1-build.0",
-                "lockfileVersion": 1,
-                "requires": true
-            }`);
+            writePackageJsonFile('1.3.1-build.0');
         });
 
         afterEach(function () {
             process.env.CI_COMMIT_REF_NAME = '';
         });
 
-        it('should increment PATCH for CHORE changes', () => {
+        it('should increment PATCH for CHORE changes, from 1.3.1-build.0', () => {
             const scope = nock(`https://gitlab.project.com`)
                 .get(`/api/v4/version`).reply(200)
                 .post(`/api/v4/projects/project%2Fgitlab-release/repository/tags`, {
@@ -186,24 +157,11 @@ describe('gitlab-release', function () {
 
     });
 
-    describe('Feature flow', () => {
+    describe('feature flow', () => {
 
         beforeEach(function () {
-            fs.writeFileSync(`package.json`, `{
-                "name": "test",
-                "version": "1.3.1",
-                "repository": {
-                    "type": "git",
-                    "url": "https://${gitHost}"
-                }
-            }`);
 
-            fs.writeFileSync(`package-lock.json`, `{
-                "name": "test",
-                "version": "1.3.1",
-                "lockfileVersion": 1,
-                "requires": true
-            }`);
+            writePackageJsonFile('1.3.1');
         });
 
         afterEach(function () {
@@ -240,3 +198,21 @@ describe('gitlab-release', function () {
     });
 });
 
+// Empty `package.json` file for our publish pipeline to write a version into.
+function writePackageJsonFile(version) {
+    fs.writeFileSync(`package.json`, `{
+                    "name": "test",
+                    "version": "${version}",
+                    "repository": {
+                        "type": "git",
+                        "url": "https://${gitHost}"
+                    }
+                }`);
+
+    fs.writeFileSync(`package-lock.json`, `{
+                    "name": "test",
+                    "version": "${version}",
+                    "lockfileVersion": 1,
+                    "requires": true
+                }`);
+}
