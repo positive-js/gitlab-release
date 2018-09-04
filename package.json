@@ -1,6 +1,6 @@
 {
     "name": "@ptsecurity/gitlab-release",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "author": {
         "name": "Positive Technologies"
     },
@@ -30,13 +30,13 @@
     ],
     "main": "index.js",
     "scripts": {
-        "test:unit": "nyc mocha --opts mocha.opts test/**/*.spec.js"
+        "test:unit": "nyc mocha --opts mocha.opts test/**/*.spec.js",
+        "version": "conventional-changelog -p angular -i CHANGELOG.md -s -r 0 --config ./tools/config.js"
     },
     "dependencies": {
         "bluebird": "^3.5.1",
         "chalk": "^2.4.1",
         "cheerio": "^1.0.0-rc.2",
-        "conventional-changelog": "^2.0.3",
         "conventional-changelog-angular": "^5.0.1",
         "conventional-recommended-bump": "^4.0.1",
         "execa": "^1.0.0",
@@ -61,6 +61,8 @@
         "chai": "^4.1.2",
         "chai-as-promised": "^7.1.1",
         "codecov": "^3.0.4",
+        "conventional-changelog": "^2.0.3",
+        "conventional-changelog-cli": "^2.0.5",
         "fs-extra": "^7.0.0",
         "mocha": "^5.2.0",
         "nock": "^9.6.1",
