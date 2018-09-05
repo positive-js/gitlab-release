@@ -6,6 +6,9 @@ anchor_job_defaults: &job_defaults
 anchor_post_checkout: &post_checkout
     post: git pull --ff-only origin "refs/pull/${CI_PULL_REQUEST//*pull\//}/merge"
 
+package_lock_key: &root_package_lock_key
+    key: gitlab-release-cache-{{ checksum "package-lock.json" }}
+
 version: 2
 jobs:
     build:
@@ -13,8 +16,7 @@ jobs:
         steps:
             - checkout:
                   <<: *post_checkout
-            - restore_cache:
-                  key: gitlab-release-{{ checksum "package.json" }}
+            - restore_cache: *root_package_lock_key
             - run:
                   name: System information
                   command: |
@@ -25,7 +27,7 @@ jobs:
                   name: Install npm packages
                   command: npm install
             - save_cache:
-                  key: gitlab-release-{{ checksum "package.json" }}
+                  <<: *root_package_lock_key
                   paths:
                     - "node_modules"
             - run:
