@@ -199,20 +199,26 @@ describe('gitlab-release', function () {
 });
 
 // Empty `package.json` file for our publish pipeline to write a version into.
+// TODO change to import {writeJson, readJson} from 'fs-extra';
 function writePackageJsonFile(version) {
     fs.writeFileSync(`package.json`, `{
-                    "name": "test",
-                    "version": "${version}",
-                    "repository": {
-                        "type": "git",
-                        "url": "https://${gitHost}"
-                    }
-                }`);
+        "name": "test",
+        "version": "${version}",
+        "repository": {
+            "type": "git",
+            "url": "https://${gitHost}"
+        }
+    }`);
 
     fs.writeFileSync(`package-lock.json`, `{
-                    "name": "test",
-                    "version": "${version}",
-                    "lockfileVersion": 1,
-                    "requires": true
-                }`);
+        "name": "test",
+        "version": "${version}",
+        "lockfileVersion": 1,
+        "requires": true
+    }`);
+
+    fs.writeFileSync(`.releaserc`, `{
+        "sendEmail": { "cmd": "dir" },
+        "buildArtifact": { "cmd": "dir"}
+    }`);
 }

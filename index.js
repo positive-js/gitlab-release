@@ -12,6 +12,7 @@ const streamToArray = require('stream-to-array');
 const rawCommitsStream = require('git-raw-commits');
 
 const releaseNotesGenerator = require('./lib/releaseNotesGenerator');
+const getConfig = require('./lib/get-config');
 const util = require('./lib/util');
 const gitTask = require('./lib/tasks/git-task');
 const pkgTask = require('./lib/tasks/pkg-task');
@@ -68,6 +69,10 @@ function gitlabRelease(packageOpts, { logger }) {
 
     config.buildType = (packageOpts.buildType) ? buildTypes[packageOpts.buildType] : buildTypes[branchType[0]];
     config.branchType = branchType;
+
+    const plugins = getConfig({ cwd: process.cwd(), logger });
+
+    logger.log('Start Tasks');
 
     const tasks = new Listr([], { renderer: VerboseRenderer });
 
@@ -190,6 +195,20 @@ function gitlabRelease(packageOpts, { logger }) {
         ]);
     }
 
+    if (plugins.config && plugins.config.buildArtifact) {
+        tasks.add([
+            {
+                title: 'Build and Upload Artifact',
+                task: (ctx, task) => new Promise((resolve, reject) => {
+
+                    execa.shellSync(`${plugins.config.buildArtifact.cmd}`);
+
+                    resolve();
+                })
+            }
+        ]);
+    }
+
     if (config.buildType().isRelease) {
         tasks.add([
             {
@@ -204,8 +223,23 @@ function gitlabRelease(packageOpts, { logger }) {
                         });
                 })
             }
-        ])
+        ]);
+
+        if (plugins.config && plugins.config.sendEmail) {
+            tasks.add([
+                {
+                    title: 'Send Email Notification',
+                    task: (ctx, task) => new Promise((resolve, reject) => {
+
+                        execa.shellSync(`${plugins.config.sendEmail.cmd}`);
+
+                        resolve();
+                    })
+                }
+            ]);
+        }
     }
+
 
     return tasks.run({ config })
         .then(() => util.readPkg())

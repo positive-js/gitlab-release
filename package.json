@@ -39,6 +39,7 @@
         "cheerio": "^1.0.0-rc.2",
         "conventional-changelog-angular": "^5.0.1",
         "conventional-recommended-bump": "^4.0.1",
+        "cosmiconfig": "^5.0.6",
         "execa": "^1.0.0",
         "figures": "^2.0.0",
         "git-latest-semver-tag": "^1.0.2",
