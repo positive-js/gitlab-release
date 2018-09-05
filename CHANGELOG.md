@@ -1,3 +1,17 @@
+# [0.1.0](https://github.com/positive-js/gitlab-release/compare/0.0.3...0.1.0) (2018-09-05)
+
+
+### Chores
+
+* added variable package_lock_key ([f7af52d](https://github.com/positive-js/gitlab-release/commit/f7af52d))
+
+
+### Features
+
+* added custom tasks for send email & build package ([dbeb37f](https://github.com/positive-js/gitlab-release/commit/dbeb37f))
+
+
+
 ## [0.0.3](https://github.com/positive-js/gitlab-release/compare/0.0.2...0.0.3) (2018-09-04)
 
 
